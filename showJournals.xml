@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<items>
+  <item type="editor" node="TableNode" vertical="false">
+    <title><![CDATA[Journals]]></title>
+    <!-- add name for now - "should" have automagically used title -->
+    <name><![CDATA[Journals]]></name>
+    <query>
+      <sql><![CDATA[ /* User defined extension: showJournals */
+select 'Oracle Designer Journal'                                  as TYPE
+     , t.owner                                                    as OWNER
+     , 'SQLDEV:LINK:'
+       || t.owner
+       || ':TABLE:'
+       || t.table_name
+       || ':oracle.dbtools.raptor.controls.grid.DefaultDrillLink' as TABLE_NAME
+     , t.num_rows                                                 as NUM_ROWS
+     , (select atc.comments
+          from all_tab_comments atc
+          where atc.owner = t.owner
+            and atc.table_name = t.table_name)                    as COMMENTS
+     , t.tablespace_name                                          as TABLESPACE_NAME
+  from all_tables t
+  where (t.owner = :OBJECT_OWNER or :OBJECT_OWNER is null)
+    and (t.table_name = substr(:OBJECT_NAME, 1, 27) || '_JN')
+union all
+select 'AF4O Journal'                                             as TYPE
+     , t.owner                                                    as OWNER
+     , 'SQLDEV:LINK:'
+       || t.owner
+       || ':TABLE:'
+       || t.table_name
+       || ':oracle.dbtools.raptor.controls.grid.DefaultDrillLink' as TABLE_NAME
+     , t.num_rows                                                 as NUM_ROWS
+     , (select atc.comments
+          from all_tab_comments atc
+          where atc.owner = t.owner
+            and atc.table_name = t.table_name)                    as COMMENTS
+     , t.tablespace_name                                          as TABLESPACE_NAME
+  from all_tables t
+  where (t.owner = :OBJECT_OWNER or :OBJECT_OWNER is null)
+    and (    :OBJECT_NAME like '__TB\_%' escape '\'
+         and t.table_name = substr(:OBJECT_NAME, 1, 2)
+                            || 'JT'
+                            || substr(:OBJECT_NAME, 5)) ]]></sql>
+    </query>
+    <subquery type="code">
+	  <query>
+	    <sql><![CDATA[  /* User defined extension: showJournals */
+select case
+         when :TYPE is not null and :TYPE in ('AF4O Journal', 'Oracle Designer Journal')
+         then
+           'select j.*' || chr(10)
+                   || '  from ' || X.JN_TABLE_NAME || ' j' || chr(10)
+                   || case :TYPE
+                        when 'AF4O Journal'            then '  where j.id < (select max(jj.id)-10000 from ' || X.JN_TABLE_NAME || ' jj)'
+                        when 'Oracle Designer Journal' then '  where JN_DATETIME > systimestamp - interval ''60'' minute'
+                        else '  where 1=1'
+                      end || chr(10)
+                   || case :TYPE
+                        when 'AF4O Journal'            then ' order by j.ID desc, j.JN_TS desc'
+                        when 'Oracle Designer Journal' then ' order by j.JN_DATETIME desc'
+                      end
+         else 'no journal selected.'
+       end SQL
+  from (select regexp_replace(replace(:TABLE_NAME, ':TABLE:', '.'), '^([^:]+:){2}|:[^ :]+$', '') as JN_TABLE_NAME from dual) X
+        ]]></sql>
+      </query>
+    </subquery>
+  </item>
+</items>

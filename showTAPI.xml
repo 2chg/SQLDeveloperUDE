@@ -1,0 +1,132 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<items>
+  <item type="editor" node="TableNode" vertical="false">
+    <title><![CDATA[TAPI]]></title>
+    <!-- add name for now - "should" have automagically used title -->
+    <name><![CDATA[TAPI]]></name>
+    <query>
+      <sql><![CDATA[ /* User defined extension: showTAPI */
+select 'Oracle Designer TAPI'                                     as TYPE
+     , t.table_owner                                              as OWNER
+     , 'SQLDEV:LINK:'
+       || t.table_owner
+       || ':TRIGGER:'
+       || t.trigger_name
+       || ':oracle.dbtools.raptor.controls.grid.DefaultDrillLink' as TRIGGER_NAME
+     , t.status                                                   as STATUS
+     , t.triggering_event                                         as TRIGGERING_EVENT
+     , t.trigger_type                                             as TRIGGER_TYPE
+     , t.when_clause                                              as WHEN_CLAUSE
+     , t.description                                              as DESCRIPTION
+     , case t.triggering_event
+         when 'INSERT' then 1
+         when 'UPDATE' then 2
+         when 'DELETE' then 3
+         else               9
+       end
+       || case t.trigger_type
+            when 'BEFORE STATEMENT' then 1
+            when 'BEFORE EACH ROW'  then 2
+            when 'AFTER EACH ROW'   then 3
+            when 'AFTER STATEMENT'  then 4
+            else                         9
+          end                                                        as ORDER_ID
+  from user_triggers t
+  where (t.table_owner = :OBJECT_OWNER or :OBJECT_OWNER is null)
+    and (t.table_name = :OBJECT_NAME)
+    and (t.trigger_name like 'CG$___\_' || substr(:OBJECT_NAME, 1, 23) escape '\')
+union all
+select 'AF4O TAPI'                                                as TYPE
+     , t.table_owner                                              as OWNER
+     , 'SQLDEV:LINK:'
+       || t.table_owner
+       || ':TRIGGER:'
+       || t.trigger_name
+       || ':oracle.dbtools.raptor.controls.grid.DefaultDrillLink' as TRIGGER_NAME
+     , t.status                                                   as STATUS
+     , t.triggering_event                                         as TRIGGERING_EVENT
+     , t.trigger_type                                             as TRIGGER_TYPE
+     , t.when_clause                                              as WHEN_CLAUSE
+     , t.description                                              as DESCRIPTION
+     , case t.triggering_event
+         when 'INSERT' then 1
+         when 'UPDATE' then 2
+         when 'DELETE' then 3
+         else               9
+       end
+       || case t.trigger_type
+            when 'BEFORE STATEMENT' then 1
+            when 'BEFORE EACH ROW'  then 2
+            when 'AFTER EACH ROW'   then 3
+            when 'AFTER STATEMENT'  then 4
+            else                         9
+          end                                                        as ORDER_ID
+  from user_triggers t
+  where (t.table_owner = :OBJECT_OWNER or :OBJECT_OWNER is null)
+    and (    :OBJECT_NAME like '__TB\_%' escape '\'
+         and t.table_name = :OBJECT_NAME
+         and t.trigger_name = substr(:OBJECT_NAME, 1, 2)
+                              || 'TR'
+                              || substr(:OBJECT_NAME, 5))
+order by TYPE
+       , ORDER_ID
+       , TRIGGERING_EVENT  ]]></sql>
+    </query>
+    <bottomquery>
+        <title><![CDATA[TAPI packages]]></title>
+        <query>
+          <sql><![CDATA[ /* User defined extension: showTAPI packages */
+    select ps.tapi_type                                                   as TYPE
+         , ps.owner                                                       as OWNER
+         , 'SQLDEV:LINK:'
+           || ps.owner
+           || ':PACKAGE:'
+           || ps.object_name
+           || ':oracle.dbtools.raptor.controls.grid.DefaultDrillLink'     as NAME
+         , ps.created                                                     as CREATED
+         , ps.status                                                      as STATUS_SPEC
+         , ps.timestamp                                                   as TIMESTAMP_SPEC
+         , pb.status                                                      as STATUS_BODY
+         , pb.timestamp                                                   as TIMESTAMP_BODY
+         , case 
+             when pb.object_name is not null
+             then 
+               'SQLDEV:LINK:'
+               || pb.owner
+               || ':PACKAGE BODY:'
+               || pb.object_name
+               || ':oracle.dbtools.raptor.controls.grid.DefaultDrillLink' 
+           end                                                            as BODY_LINK
+      from (
+            select 'Oracle Designer TAPI' as TAPI_TYPE
+                 , o.*
+              from all_objects o
+              where o.object_type = 'PACKAGE'
+                and (o.owner = :OBJECT_OWNER or :OBJECT_OWNER is null)
+                and (o.object_name = 'CG$' || substr(:OBJECT_NAME, 1, 27))
+            union all
+            select 'AF4O TAPI' as TAPI_TYPE
+                 , o.*
+              from all_objects o
+              where o.object_type = 'PACKAGE'
+                and (o.owner = :OBJECT_OWNER or :OBJECT_OWNER is null)
+                and :OBJECT_NAME like '__TB\_%' escape '\'
+                and (   o.object_name = substr(:OBJECT_NAME, 1, 2)
+                                        || 'PA'
+                                        || substr(:OBJECT_NAME, 5)
+                     or o.object_name = substr(:OBJECT_NAME, 1, 2)
+                                        || 'PT'
+                                        || substr(:OBJECT_NAME, 5)
+                     or o.object_name = substr(:OBJECT_NAME, 1, 2)
+                                        || 'PT'
+                                        || substr(substr(:OBJECT_NAME, 1, 26), 5)
+                                        || '_ADD'
+                )
+            ) ps
+        left join all_objects pb on     pb.object_type = 'PACKAGE BODY'
+                                    and pb.owner       = ps.owner
+                                    and pb.object_name = ps.object_name  ]]></sql>
+        </query>
+    </bottomquery>
+  </item>
+</items>

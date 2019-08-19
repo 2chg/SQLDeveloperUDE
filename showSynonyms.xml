@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<items>
+  <item type="sharedQuery" id = "synonyms">
+    <query>
+      <sql><![CDATA[ /* User defined extension: showSynonyms */
+select s.owner                                                    as OWNER
+     , 'SQLDEV:LINK:'
+       || s.owner
+       || ':SYNONYM:'
+       || s.synonym_name
+       || ':oracle.dbtools.raptor.controls.grid.DefaultDrillLink' as SYNONYM_NAME
+  from all_synonyms s
+  where (s.table_owner = :OBJECT_OWNER or :OBJECT_OWNER is null)
+    and (s.table_name  = :OBJECT_NAME  or :OBJECT_NAME  is null)
+order by case s.owner
+           when 'PUBLIC' then 1
+           else               2
+         end
+       , s.owner
+       , s.synonym_name ]]></sql>
+    </query>
+  </item>
+  <item type="editor" node="TableNode" vertical="false">
+    <title><![CDATA[Synonyms]]></title>
+    <!-- add name for now - "should" have automagically used title -->
+    <name><![CDATA[Synonyms]]></name>
+    <query id ="synonyms" />
+  </item>
+  <item type="editor" node="ViewNode" vertical="false">
+    <title><![CDATA[Synonyms]]></title>
+    <!-- add name for now - "should" have automagically used title -->
+    <name><![CDATA[Synonyms]]></name>
+    <query id ="synonyms" />
+  </item>
+  <item type="editor" node="PlSqlBaseNode" vertical="false">
+    <title><![CDATA[Synonyms]]></title>
+    <!-- add name for now - "should" have automagically used title -->
+    <name><![CDATA[Synonyms]]></name>
+    <query id ="synonyms" />
+  </item>
+</items>
